@@ -4,7 +4,7 @@ Represents the current state of the game.
 
 Assignment adapted from HMC CS60
 
-Last Updated: 5/14/24 1:12 AM   Turning in for Lab 9 credit before working on Lab 10
+Last Updated: 5/16/24 3:03 AM
 """
 
 from boardCell import BoardCell
@@ -164,6 +164,9 @@ class GameData:
         row = cell.getRow()     #Stores the "Y" coordinate of the cell
         col = cell.getCol()     #Stores the "X" coordinate of the cell
 
+        if row == 0:        #Meant to prevent the method accessing "Out of Bound" Data
+            return None
+
         cell_ID = self.getCell(row - 1, col)    #Stores the data of the cell to its "North"
 
         return cell_ID   #Returns the cell a row above the given cell
@@ -172,6 +175,9 @@ class GameData:
         """ Returns the cell to the south of the given cell """
         row = cell.getRow()     #Stores the "Y" coordinate of the cell
         col = cell.getCol()     #Stores the "X" coordinate of the cell
+
+        if row == self.__height - 1:    #Meant to prevent the method accessing "Out of Bound" Data
+            return None
 
         cell_ID = self.getCell(row + 1, col)    #Stores the data of the cell to its "South"
 
@@ -182,6 +188,9 @@ class GameData:
         row = cell.getRow()     #Stores the "Y" coordinate of the cell
         col = cell.getCol()     #Stores the "X" coordinate of the cell
 
+        if col == self.__width - 1: #Meant to prevent the method accessing "Out of Bound" Data
+            return None
+
         cell_ID = self.getCell(row, col + 1)    #Stores the data of the cell to its "East"
 
         return cell_ID   #Returns the cell a column to the right the given cell
@@ -190,6 +199,9 @@ class GameData:
         """ Returns the cell to the west of the given cell """
         row = cell.getRow()     #Stores the "Y" coordinate of the cell
         col = cell.getCol()     #Stores the "X" coordinate of the cell
+
+        if col == 0:        #Meant to prevent the method accessing "Out of Bound" Data
+            return None
 
         cell_ID = self.getCell(row, col - 1)    #Stores the data of the cell to its "West"
 
@@ -293,13 +305,34 @@ class GameData:
     # Helper method(s) for reverse #
     ################################
     
-    # TODO Write method(s) here to help reverse the snake
+    def reverseSnake(self):
+        """ Uses the built-in reverse list method to invert the order of the cells"""
+        self.__snakeCells.reverse()
 
-    # Steps:
-    #  - Unlabel the head
-    #  - Reverse the body
-    #  - Relabel the head
-    #  - Calculate the new direction of the snake
+    def RelabelSnake(self):
+        """ Changes the cell type of the first and last element in the snakeCells list
+            Since the getSnakeHead method calls for the first element in the list rather
+            than the cell of cell type head similarly for the getSnakeTail method calls
+            for the last element in the list"""
+        self.getSnakeHead().becomeHead()
+
+        self.getSnakeTail().becomeBody()
+
+    def DirectionChange(self, cell):
+        """ Changes direction based on the current direction and
+            if the next cell in that direction is of cell type body"""
+        if self.__currentMode == self.SnakeMode.GOING_NORTH:
+            if not cell.isBody():
+                self.setDirectionSouth()
+        elif self.__currentMode == self.SnakeMode.GOING_SOUTH:
+            if not cell.isBody():
+                self.setDirectionNorth()
+        elif self.__currentMode == self.SnakeMode.GOING_WEST:
+            if not cell.isBody():
+                self.setDirectionEast()
+        elif self.__currentMode == self.SnakeMode.GOING_EAST:
+            if not cell.isBody():
+                self.setDirectionWest()
 
     #################################
     # Methods for AI implementation #
@@ -307,8 +340,9 @@ class GameData:
 
     def resetCellsForSearch(self):
         for row in self.__board:
-            for cell in row:
-                cell.clearSearchInfo()
+            for col in self.__board:
+                for cell in col:
+                    cell.clearSearchInfo()
     
     #########################
     # Methods for Game over #

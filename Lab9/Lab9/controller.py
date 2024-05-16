@@ -5,7 +5,7 @@ The Controller of the game, including handling key presses
 
 Adapted from HMC CS60
 
-Last Updated: 5/14/24 1:13 AM   Turning in for Lab 9 credit before working on Lab 10
+Last Updated: 5/16/24 3:02 AM
 """
 
 from preferences import Preferences
@@ -91,16 +91,20 @@ class Controller():
                     self.__data.setAIMode()
                 # Change Snake's Direction to North
                 elif event.key in self.Keypress.UP.value:
-                    self.__data.setDirectionNorth()
+                    if not self.__data.getHeadNorthNeighbor().isBody():
+                        self.__data.setDirectionNorth()
                 # Change Snake's Direction to South
                 elif event.key in self.Keypress.DOWN.value:
-                    self.__data.setDirectionSouth()
+                    if not self.__data.getHeadSouthNeighbor().isBody():
+                        self.__data.setDirectionSouth()
                 # Change Snake's Direction to East
                 elif event.key in self.Keypress.RIGHT.value:
-                    self.__data.setDirectionEast()
+                    if not self.__data.getHeadEastNeighbor().isBody():
+                        self.__data.setDirectionEast()
                 # Change Snake's Direction to West
                 elif event.key in self.Keypress.LEFT.value:
-                    self.__data.setDirectionWest()
+                    if not self.__data.getHeadWestNeighbor().isBody():
+                        self.__data.setDirectionWest()
 
     def updateSnake(self):
         """ Move the snake forward one step, either in the current 
@@ -161,25 +165,52 @@ class Controller():
         head.setAddedToSearchList()
         cellsToSearch.put(head)
 
-        # Search!
-        # TODO implement BFS here
-
+        #Uses recursion to store the cells to add
+        return self.BFS(cellsToSearch)
+        
         # If the search failed, return a random neighbor
         return self.__data.getRandomNeighbor(head)
+    
+    def BFS(self, queue):
+        Root = queue._get()
+        
+        Children = self.__data.getNeighbors(Root)       # Have seen as issue where the function will recurse nearly 1,000 
+                                                        # times and end the game if the food is too far from the head
+        
+        for cell in Children:
+            if cell == None:
+                continue
+            if cell.isBody():
+                continue
+            if cell.isWall():
+                continue
+            if cell.alreadyAddedToSearchList() == False:
+                cell.setParent(Root)
+                if cell.isFood():
+                    return self.getFirstCellInPath(cell)
+                cell.setAddedToSearchList()
+                queue.put(cell)
+            else:
+                continue
+        return self.BFS(queue)
 
     def getFirstCellInPath(self, foodCell):
-        """ TODO COMMENT HERE """
+        """ Recurses as many times as necessary to return the most optimal cell to move to"""
 
-        # TODO
-        
-        return foodCell
+        if foodCell.getParent() == self.__data.getSnakeHead():
+            return foodCell
+        else:
+            return self.getFirstCellInPath(foodCell.getParent())
     
     def reverseSnake(self):
-        """ TODO COMMENT HERE """
+        """ Inverts the order of the snake cells, then relabels the head and tail, then relies on some RNG to change direction """
+        self.__data.reverseSnake()
+        
+        self.__data.RelabelSnake()
 
-        # TODO
+        cell = self.__data.getRandomNeighbor(self.__data.getSnakeHead())
 
-        pass
+        self.__data.DirectionChange(cell)
 
     def playSound_eat(self):
         """ Plays an eating sound """
